@@ -1,149 +1,186 @@
-
-//AddTransactionActivity
 package com.example.loanexpensemanager;
-
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.TextView;
+import android.widget.DatePicker;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.example.loanexpensemanager.databinding.ActivityAddTransactionBinding;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
 public class AddTransactionActivity extends AppCompatActivity {
-    ActivityAddTransactionBinding binding;
-    FirebaseFirestore fStore;
-    FirebaseAuth firebaseAuth;
-    FirebaseUser firebaseUser;
-    String type="";
-    private int totalExpense = 0;
-    double budget = 0;
-
-    FirebaseFirestore firebaseFirestore;
-
+    private ActivityAddTransactionBinding binding;
+    private FirebaseFirestore firestore;
+    private FirebaseAuth firebaseAuth;
+    private String transactionType = "";
+    private double budget = 0;
+    private double balance = 0;
+    private double totalLoan = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding=ActivityAddTransactionBinding.inflate(getLayoutInflater());
+        binding = ActivityAddTransactionBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-//firebase
-        fStore=FirebaseFirestore.getInstance();
-        firebaseAuth=FirebaseAuth.getInstance();
-        firebaseUser=firebaseAuth.getCurrentUser();
-        firebaseFirestore = FirebaseFirestore.getInstance();
-        TextView totalBudgetTextView = binding.userBudget;
 
+        initializeFirebase();
+        fetchUserBudget();
+        setupListeners();
+    }
+
+    private void initializeFirebase() {
+        firestore = FirebaseFirestore.getInstance();
+        firebaseAuth = FirebaseAuth.getInstance();
+    }
+
+    private void fetchUserBudget() {
         String userId = firebaseAuth.getCurrentUser().getUid();
-        DocumentReference userRef = firebaseFirestore.collection("users").document(userId);
+        firestore.collection("users").document(userId).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        Double budgetValue = documentSnapshot.getDouble("budget");
+                        budget = budgetValue != null ? budgetValue : 0;
+                        fetchTransactions();
+                    }
+                })
+                .addOnFailureListener(e -> showErrorMessage("Failed to fetch budget: " + e.getMessage()));
+    }
 
-        userRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-            @Override
-            public void onSuccess(DocumentSnapshot documentSnapshot) {
-                if (documentSnapshot.exists()) {
-                    budget = documentSnapshot.getDouble("budget");
-                    totalBudgetTextView.setText(String.valueOf((int) budget));
+    private void fetchTransactions() {
+        String userId = firebaseAuth.getUid();
+        firestore.collection("Expenses").document(userId).collection("Notes")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    balance = budget;
+                    totalLoan = 0;
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        String type = document.getString("type");
+                        double amount = Double.parseDouble(document.getString("amount"));
+                        if ("Expense".equals(type)) {
+                            balance -= amount;
+                        } else if ("Loan".equals(type)) {
+                            totalLoan += amount;
+                        }
+                    }
+                    updateFinancialSummary();
+                })
+                .addOnFailureListener(e -> showErrorMessage("Failed to fetch transactions: " + e.getMessage()));
+    }
 
-                }
+    private void updateFinancialSummary() {
+        binding.userBudget.setText(String.format(Locale.getDefault(), "%.2f", budget));
+        binding.userBalance.setText(String.format(Locale.getDefault(), "%.2f", balance));
+        binding.userTotalLoan.setText(String.format(Locale.getDefault(), "%.2f", totalLoan));
+    }
+
+    private void setupListeners() {
+        binding.transactionTypeGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.expense_radio) {
+                transactionType = "Expense";
+            } else if (checkedId == R.id.loan_radio) {
+                transactionType = "Loan";
             }
         });
-        binding.ImageCal.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try {
-                    startActivity(new Intent(AddTransactionActivity.this, CalendarActivity.class));
-                } catch (Exception e) {
-                    return;
-                }
+
+        binding.btnAddTransaction.setOnClickListener(v -> addTransaction());
+    }
+
+    private void addTransaction() {
+        String amount = binding.userAmountAdd.getText().toString().trim();
+        String note = binding.userNoteAdd.getText().toString().trim();
+
+        if (amount.isEmpty() || transactionType.isEmpty()) {
+            showErrorMessage("Please enter amount and select transaction type");
+            return;
+        }
+
+        double transactionAmount;
+        try {
+            transactionAmount = Double.parseDouble(amount);
+        } catch (NumberFormatException e) {
+            showErrorMessage("Please enter a valid amount");
+            return;
+        }
+
+        if (!validateTransaction(transactionAmount)) return;
+
+        String selectedDate = getSelectedDate();
+        String id = UUID.randomUUID().toString();
+
+        Map<String, Object> transaction = new HashMap<>();
+        transaction.put("id", id);
+        transaction.put("amount", String.format(Locale.US, "%.2f", transactionAmount));
+        transaction.put("note", note);
+        transaction.put("type", transactionType);
+        transaction.put("date", selectedDate);
+
+        saveTransaction(transaction);
+    }
+
+    private boolean validateTransaction(double transactionAmount) {
+        if (transactionType.equals("Expense")) {
+            if (transactionAmount > balance) {
+                showErrorMessage("Insufficient balance for this expense");
+                return false;
             }
-        });
-        binding.expenseCheck.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                type="Expense";
-                binding.expenseCheck.setChecked(true);
-                binding.incomeCheck.setChecked(false);
-            }
-        });
-        binding.incomeCheck.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                type="Loan";
-                binding.expenseCheck.setChecked(false);
-                binding.incomeCheck.setChecked(true);
-            }
-        });
-        binding.btnAddTransaction.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String amount=binding.userAmountAdd.getText().toString().trim();
-                String note=binding.userNoteAdd.getText().toString().trim();
-                if (amount.length()<=0){
-                    return;
-                }
-                int expenseAmount=Integer.parseInt(amount);
-                int newTotalExpense=totalExpense+expenseAmount;
-                totalExpense+=expenseAmount;
-                if(newTotalExpense >budget){
-                    Toast.makeText(AddTransactionActivity.this, "You have Exceeded your Limit spend", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                totalExpense=newTotalExpense;
+            balance -= transactionAmount;
+        } else if (transactionType.equals("Loan")) {
+            totalLoan += transactionAmount;
+        }
+        return true;
+    }
 
+    private String getSelectedDate() {
+        DatePicker datePicker = binding.datePicker;
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(datePicker.getYear(), datePicker.getMonth(), datePicker.getDayOfMonth());
+        SimpleDateFormat sdf = new SimpleDateFormat("dd MM yyyy", Locale.getDefault());
+        return sdf.format(calendar.getTime());
+    }
 
-                if (type.length()<=0){
-                    Toast.makeText(AddTransactionActivity.this, "Select transaction type", Toast.LENGTH_SHORT).show();
-                }
-                SimpleDateFormat sdf=new SimpleDateFormat("dd MM yyyy", Locale.getDefault());
-                String currentDate=sdf.format(new Date());
+    private void saveTransaction(Map<String, Object> transaction) {
+        String userId = firebaseAuth.getUid();
+        firestore.collection("Expenses").document(userId).collection("Notes").document((String) transaction.get("id")).set(transaction)
+                .addOnSuccessListener(unused -> {
+                    showSuccessMessage("Transaction added successfully");
+                    clearInputFields();
+                    navigateToDashboard();
+                })
+                .addOnFailureListener(e -> showErrorMessage("Failed to add transaction: " + e.getMessage()));
+    }
 
-                String id= UUID.randomUUID().toString();
-                Map<String,Object>transaction=new HashMap<>();
-                transaction.put("id",id);
-                transaction.put("amount",amount);
-                transaction.put("note",note);
-                transaction.put("type",type);
-                transaction.put("date",currentDate);
+    private void navigateToDashboard() {
+        Intent intent = new Intent(AddTransactionActivity.this, DashboardActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        finish();
+    }
 
-                fStore.collection("Expenses").document(firebaseAuth.getUid()).collection("Notes").document(id).set(transaction)
-                        .addOnSuccessListener(new OnSuccessListener<Void>() {
-                            @Override
-                            public void onSuccess(Void unused) {
-                                Toast.makeText(AddTransactionActivity.this, "Added", Toast.LENGTH_SHORT).show();
-                                binding.userNoteAdd.setText("");
-                                binding.userAmountAdd.setText("");
-                            }
-                        })
-                        .addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Toast.makeText(AddTransactionActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-                        });
+    private void clearInputFields() {
+        binding.userAmountAdd.setText("");
+        binding.userNoteAdd.setText("");
+        binding.transactionTypeGroup.clearCheck();
+        binding.datePicker.updateDate(Calendar.getInstance().get(Calendar.YEAR),
+                Calendar.getInstance().get(Calendar.MONTH),
+                Calendar.getInstance().get(Calendar.DAY_OF_MONTH));
+    }
 
-            }
-        });
+    private void showErrorMessage(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private void showSuccessMessage(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 }
-
-
-
-
-

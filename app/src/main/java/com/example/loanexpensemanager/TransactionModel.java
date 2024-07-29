@@ -14,7 +14,6 @@ public class TransactionModel {
 
         }
 
-
     public String getId() {
         return id;
     }

@@ -1,89 +1,130 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="10dp"
-    tools:context=".AddTransactionActivity">
+    android:background="#94A8A6"
+    tools:context=".UpdateActivity">
 
-    <RelativeLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="?actionBarSize"
-        android:id="@+id/custom_toolbar_add_transaction"
-        >
-        <TextView
-            android:text="Add Transaction"
-            android:background="@color/teal_200"
-            android:textSize="18sp"
-            android:textAlignment="center"
-            android:textStyle="bold"
-            android:layout_centerVertical="true"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <RelativeLayout
+            android:id="@+id/custom_toolbar_update_transaction"
+            android:layout_width="match_parent"
+            android:layout_height="?actionBarSize"
+            android:background="@color/teal_700">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="Update Transaction"
+                android:textColor="@android:color/white"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+        </RelativeLayout>
+
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            />
-    </RelativeLayout>
-    <EditText
-        android:id="@+id/user_amount_add"
-        android:inputType="number"
-        android:hint="Amount"
-        android:layout_marginTop="30dp"
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"
-        android:padding="15dp"
-        android:background="@drawable/edit_text_bg"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
 
-    <EditText
-        android:id="@+id/user_note_add"
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"
-        android:hint="Note"
-        android:textAlignment="textStart"
-        android:gravity="start"
-        android:layout_marginTop="30dp"
-        android:padding="15dp"
-        android:background="@drawable/edit_text_bg"
-        android:layout_width="match_parent"
-        android:layout_height="100dp"/>
-    <LinearLayout
-        android:gravity="center"
-        android:weightSum="2"
-        android:orientation="horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        <CheckBox
-            android:id="@+id/expense_check"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:layout_weight="1"
-            android:text="Expense"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"/>
-        <CheckBox
-            android:id="@+id/income_check"
-            android:gravity="center"
-            android:layout_weight="1"
-            android:text="Income"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Amount">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/user_amount_add"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="numberDecimal" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:hint="Note">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/user_note_add"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="top"
+                        android:inputType="textMultiLine"
+                        android:lines="3" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Transaction Type"
+                    android:textStyle="bold" />
+
+                <RadioGroup
+                    android:id="@+id/transaction_type_group"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/expense_check"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Expense" />
+
+                    <RadioButton
+                        android:id="@+id/income_check"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Income" />
+
+                </RadioGroup>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <Button
+            android:id="@+id/btn_update_transaction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:backgroundTint="@color/teal_700"
+            android:padding="12dp"
+            android:text="Update Transaction"
+            android:textColor="@android:color/white" />
+
+        <Button
+            android:id="@+id/btn_delete_transaction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="@color/red"
+            android:padding="12dp"
+            android:text="Delete Transaction"
+            android:textColor="@android:color/white" />
 
     </LinearLayout>
 
-    <Button
-        android:id="@+id/btn_update_transaction"
-        android:layout_width="384dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="Update" />
-    <Button
-        android:id="@+id/btn_delete_transaction"
-        android:layout_width="384dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="Delete" />
-
-</LinearLayout>
+</ScrollView>

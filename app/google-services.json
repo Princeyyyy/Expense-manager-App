@@ -1,36 +1,26 @@
 {
   "project_info": {
-    "project_number": "243988760149",
-    "project_id": "loanexpensemanager",
-    "storage_bucket": "loanexpensemanager.appspot.com"
+    "project_number": "149050525993",
+    "project_id": "expensetracker-3f639",
+    "storage_bucket": "expensetracker-3f639.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:243988760149:android:99c4baac2e142b692076dc",
+        "mobilesdk_app_id": "1:149050525993:android:2ce88c05e25cae08a58f38",
         "android_client_info": {
           "package_name": "com.example.loanexpensemanager"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "243988760149-qi7sicv4h2civ8epccdlqi71upcgn1qo.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyB83587p6OkDt-AGCAc8JOmkvudTux66Rk"
+          "current_key": "AIzaSyBqrrVCc1zZzGOrF2XYvziGj-e43xRl8lg"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "243988760149-qi7sicv4h2civ8epccdlqi71upcgn1qo.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

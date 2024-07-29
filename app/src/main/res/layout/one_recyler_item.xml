@@ -1,48 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="10dp"
-    android:layout_marginLeft="10dp"
-    android:layout_marginRight="10dp"
-    android:layout_marginBottom="4dp"
-    android:background="?selectableItemBackground">
-    <View
-        android:id="@+id/priority_one"
-        android:layout_width="25dp"
-        android:layout_height="25dp"
-        android:layout_margin="10dp"
-        android:background="@drawable/green_shape"
-        android:layout_gravity="end"
-        />
+    app:cardBackgroundColor="@android:color/white"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="8dp">
+
     <RelativeLayout
-        android:padding="15dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:padding="15dp">
+
+        <View
+            android:id="@+id/priority_one"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:layout_alignParentEnd="true"
+            android:background="@drawable/green_shape" />
+
         <TextView
             android:id="@+id/note_one"
-            android:text="Your note here"
-            android:textSize="18sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_marginEnd="10dp"
+            android:layout_toStartOf="@id/priority_one"
             android:ellipsize="end"
-            android:maxLines="1"
             android:maxLength="30"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:maxLines="1"
+            android:text="Your note here"
+            android:textColor="@color/black"
+            android:textSize="18sp" />
+
         <TextView
-            android:layout_below="@id/note_one"
             android:id="@+id/amount_one"
-            android:textColor="@color/red"
-            android:textStyle="bold"
-            android:textSize="20sp"
-            android:text="200"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:layout_below="@id/note_one"
+            android:layout_marginTop="5dp"
+            android:text="200"
+            android:textColor="@color/red"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
         <TextView
             android:id="@+id/date_one"
-            android:layout_below="@id/amount_one"
-            android:text="20 July 2023"
-            android:textColor="@color/black"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:layout_below="@id/amount_one"
+            android:layout_marginTop="5dp"
+            android:text="20 July 2023"
+            android:textColor="@color/black" />
+
     </RelativeLayout>
 </androidx.cardview.widget.CardView>

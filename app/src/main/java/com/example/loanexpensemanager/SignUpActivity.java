@@ -1,107 +1,162 @@
 package com.example.loanexpensemanager;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.util.Patterns;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.Toast;
-
 import com.example.loanexpensemanager.databinding.ActivitySignUpBinding;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
-
 import java.util.HashMap;
 import java.util.Map;
 
 public class SignUpActivity extends AppCompatActivity {
-    ActivitySignUpBinding binding;
-    FirebaseAuth firebaseAuth;
-    FirebaseFirestore firebaseFirestore;
-
-    private EditText userBudget;
-
+    private ActivitySignUpBinding binding;
+    private FirebaseAuth firebaseAuth;
+    private FirebaseFirestore firebaseFirestore;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding=ActivitySignUpBinding.inflate(getLayoutInflater());
+        binding = ActivitySignUpBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        userBudget=findViewById(R.id.userBudget);
-        firebaseAuth=FirebaseAuth.getInstance();
-        FirebaseFirestore firebaseFirestore = FirebaseFirestore.getInstance();
 
+        firebaseAuth = FirebaseAuth.getInstance();
+        firebaseFirestore = FirebaseFirestore.getInstance();
 
+        binding.goToLoginScreen.setOnClickListener(v -> navigateToLogin());
+        binding.btnSignup.setOnClickListener(v -> attemptSignUp());
 
+        setupTextChangeListeners();
+    }
 
-        binding.goToLoginScreen.setOnClickListener(new View.OnClickListener() {
+    private void setupTextChangeListeners() {
+        binding.emailForSignUp.addTextChangedListener(new TextWatcherAdapter() {
             @Override
-            public void onClick(View v) {
-                Intent intent=new Intent(SignUpActivity.this,MainActivity.class);
-                try {
-                    startActivity(intent);
-                }catch (Exception e){
-
-                }
-            }
-        });
-        binding.btnSignup.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String email = binding.emailForSignUp.getText().toString();
-                String password = binding.passwordForSignup.getText().toString();
-                double budget = Double.parseDouble(userBudget.getText().toString().trim());
-
-                if (email.trim().length() <= 0 || password.trim().length() <= 0) {
-                    return;
-                }
-
-                // Create a new user in Firebase Authentication
-                firebaseAuth.createUserWithEmailAndPassword(email, password)
-                        .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
-                            @Override
-                            public void onSuccess(AuthResult authResult) {
-                                // User creation successful, save the budget to Firestore
-                                String userId = firebaseAuth.getCurrentUser().getUid();
-                                DocumentReference userRef = firebaseFirestore.collection("users").document(userId);
-
-                                Map<String, Object> userData = new HashMap<>();
-                                userData.put("email", email);
-                                userData.put("budget", budget);
-
-                                userRef.set(userData)
-                                        .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                            @Override
-                                            public void onSuccess(Void aVoid) {
-                                                // Budget saved successfully, navigate to the dashboard activity
-                                                startActivity(new Intent(SignUpActivity.this, DashboardActivity.class));
-                                                finish();
-                                            }
-                                        })
-                                        .addOnFailureListener(new OnFailureListener() {
-                                            @Override
-                                            public void onFailure(@NonNull Exception e) {
-                                                // Handle failure to save budget
-                                                Toast.makeText(SignUpActivity.this, "Failed to save budget", Toast.LENGTH_SHORT).show();
-                                            }
-                                        });
-                            }
-                        })
-                        .addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                // Handle failure to create user
-                                Toast.makeText(SignUpActivity.this, "Failed to create user", Toast.LENGTH_SHORT).show();
-                            }
-                        });
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                binding.emailInputLayout.setError(null);
+                updateSignUpButtonState();
             }
         });
 
+        binding.passwordForSignup.addTextChangedListener(new TextWatcherAdapter() {
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                binding.passwordInputLayout.setError(null);
+                updateSignUpButtonState();
+            }
+        });
+
+        binding.userBudget.addTextChangedListener(new TextWatcherAdapter() {
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                binding.budgetInputLayout.setError(null);
+                updateSignUpButtonState();
+            }
+        });
+    }
+
+    private void updateSignUpButtonState() {
+        boolean isValid = !TextUtils.isEmpty(binding.emailForSignUp.getText()) &&
+                !TextUtils.isEmpty(binding.passwordForSignup.getText()) &&
+                !TextUtils.isEmpty(binding.userBudget.getText());
+        binding.btnSignup.setEnabled(isValid);
+        binding.btnSignup.setBackgroundTintList(ContextCompat.getColorStateList(this,
+                isValid ? R.color.teal_200 : R.color.red2));
+    }
+
+    private void navigateToLogin() {
+        startActivity(new Intent(SignUpActivity.this, LoginActivity.class));
+        finish();
+    }
+
+    private void attemptSignUp() {
+        String email = binding.emailForSignUp.getText().toString().trim();
+        String password = binding.passwordForSignup.getText().toString().trim();
+        String budgetString = binding.userBudget.getText().toString().trim();
+
+        if (!validateInputs(email, password, budgetString)) {
+            return;
+        }
+
+        double budget = Double.parseDouble(budgetString);
+        showLoading(true);
+        createUser(email, password, budget);
+    }
+
+    private boolean validateInputs(String email, String password, String budget) {
+        boolean isValid = true;
+
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            binding.emailInputLayout.setError("Please enter a valid email address");
+            isValid = false;
+        }
+
+        if (password.length() < 6) {
+            binding.passwordInputLayout.setError("Password must be at least 6 characters long");
+            isValid = false;
+        }
+
+        try {
+            double budgetValue = Double.parseDouble(budget);
+            if (budgetValue <= 0) {
+                binding.budgetInputLayout.setError("Budget must be greater than 0");
+                isValid = false;
+            }
+        } catch (NumberFormatException e) {
+            binding.budgetInputLayout.setError("Invalid budget format");
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    private void createUser(String email, String password, double budget) {
+        firebaseAuth.createUserWithEmailAndPassword(email, password)
+                .addOnSuccessListener(authResult -> saveUserData(email, budget))
+                .addOnFailureListener(e -> {
+                    showLoading(false);
+                    Toast.makeText(SignUpActivity.this, "Failed to create user: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void saveUserData(String email, double budget) {
+        String userId = firebaseAuth.getCurrentUser().getUid();
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("email", email);
+        userData.put("budget", budget);
+
+        firebaseFirestore.collection("users").document(userId).set(userData)
+                .addOnSuccessListener(aVoid -> {
+                    showLoading(false);
+                    Toast.makeText(SignUpActivity.this, "User created successfully", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(SignUpActivity.this, DashboardActivity.class));
+                    finish();
+                })
+                .addOnFailureListener(e -> {
+                    showLoading(false);
+                    Toast.makeText(SignUpActivity.this, "Failed to save user data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void showLoading(boolean isLoading) {
+        binding.progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+        binding.btnSignup.setVisibility(isLoading ? View.INVISIBLE : View.VISIBLE);
+    }
+
+    private static class TextWatcherAdapter implements android.text.TextWatcher {
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+        @Override
+        public void afterTextChanged(android.text.Editable s) {}
     }
 }
